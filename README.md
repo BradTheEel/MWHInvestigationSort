@@ -1,27 +1,25 @@
-# Investigation Sort 0.1.4
+# Investigation Sort
 
-Плагин добавляет штатное окно выбора сортировки в «Разместить новое задание → Расследования». Чтобы открыть его, нажмите **Tab** на клавиатуре или **правый стик (RS/R3)** на геймпаде, как в Ресурсном центре.
+[Читать на русском](README_RU.md)
 
-Окно работает со списком зарегистрированных расследований выбранного ранга. Плагин применяет выбранный критерий ко всему списку и обновляет текущую страницу. При перелистывании игра получает очередную часть общего отсортированного списка. Отмена сохраняет выбранный порядок. Штатный пункт сброса возвращает порядок игры.
+Investigation Sort is a Monster Hunter: World Iceborne mod that brings the Resource Center's sorting menu to **Post a New Quest → Investigations**.
 
-В 0.1.3 команда открытия обрабатывается при штатном обновлении фильтра интерфейсом игры. Выбранный порядок доступен и при сборке страниц на рабочих потоках. Для окна, открытого с доски, плагин пропускает отдельную плашку результата Ресурсного центра.
+Press **Tab** on the keyboard or click the **right stick (RS/R3)** on a controller to open the menu. The selected sort order applies to all pages of registered investigations for the selected rank. Canceling keeps the current order. The reset option restores the game's default order.
 
-В 0.1.4, пока экран выбора задания закрыт, перехватчик проверяет штатный флаг активности меню и пропускает проверки памяти и обработку ввода. После закрытия списка плагин завершает активную сессию сортировки.
+This mod was developed with the help of artificial intelligence (AI).
 
-## Установка и удаление
+## Installation
 
-Требуются Monster Hunter: World Iceborne для Windows x64, Steam build `15539686` и Stracker’s Loader. Скопируйте папку `nativePC` из установочного архива в папку игры. При обновлении замените `nativePC/plugins/InvestigationSort.dll`. Для удаления закройте игру и удалите этот файл.
+The mod targets Steam build `15539686` on Windows x64 and requires Stracker’s Loader.
 
-## Сборка
+Copy the `nativePC` folder from the install archive into the game directory. To uninstall, close the game and remove `nativePC/plugins/InvestigationSort.dll`.
 
-В корне репозитория выполните в PowerShell
+## Building from source
+
+Run the build script from the repository root in PowerShell using Zig 0.13.0.
 
 ```powershell
 ./build.ps1 -ZigPath 'C:/path/to/zig.exe'
 ```
 
-Требуется Zig 0.13.0. DLL появится в `build/InvestigationSort.dll`. Исходники MinHook и лицензия находятся в `src/vendor/`. Для запуска проверок добавьте `-Test -Launcher 'C:/path/to/owned-test-launcher-v1/launcher.exe'`.
-
-## Покрытие проверки
-
-Сборка 0.1.4 проверена вне игры на Steam build `15539686`. Стенды покрывают открытие по Tab и RS, повтор после отклонённого запроса, отмену, подтверждение, сброс, сборку страниц с другого потока и обработку плашки результата. При закрытом экране выбора задания счётчик вызовов `VirtualQuery` остался на нуле. Проверка в запущенной игре и замеры FPS ещё предстоят.
+The script writes `build/InvestigationSort.dll`. The repository includes the [MinHook source and license](src/vendor/).
