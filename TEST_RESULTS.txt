@@ -1,0 +1,23 @@
+Investigation Sort 0.1.3
+Target Steam build 15539686, Windows x64
+Stock executable SHA-256
+C2EBBBD2C49F216D484E31A5219BED419EB1E5E7D206D02CBA040A3AB79D90EA
+
+Live baseline, 0.1.2 at the Astera quest board
+- Captured Tab press edges while the list was active, including misses before enqueue.
+- After confirmation, the first page matched the plugin order of 54 investigations.
+  The second page used stock row indices while the plugin order and save data persisted.
+- The native filter result banner was still active after the quest list closed.
+- The quest list was in GUI group 20 with parallel dispatch enabled.
+
+RED   With 0.1.2 the transaction fixture lost the sort when a worker built page 2.
+PASS  Zig 0.13.0 Windows x64 build with warnings treated as errors
+PASS  Sort policy and transaction fixtures through owned-test-launcher-v1
+PASS  Hybrid fixture with the verified filter publisher return address, native
+      controller reader, native page callback and hooked investigation builder.
+      Both native result callbacks are skipped for the owned popup and run for
+      the control case.
+PASS  23 image fingerprints, 4 dispatch slots and 7 native call checks
+PASS  Five hook entries install and roll back against the copied stock code
+
+Gameplay verification of 0.1.3 is pending.
