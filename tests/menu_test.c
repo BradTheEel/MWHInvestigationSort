@@ -1,6 +1,20 @@
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+static unsigned memory_queries;
+
+static SIZE_T counted_query(LPCVOID address, PMEMORY_BASIC_INFORMATION info, SIZE_T size)
+{
+    ++memory_queries;
+    return VirtualQuery(address, info, size);
+}
+
+#define VirtualQuery counted_query
 #include "../src/investigation_sort.c"
+#undef VirtualQuery
 
 static Byte *gui, *owner, *button, *page, *filter, *popup, *save, *save_manager, *keyboard;
 static QueueEntry queued;
@@ -36,6 +50,9 @@ static void fake_result(const InlineCallable *callable, Byte **parent, Byte **re
 
 static void manager_frame(void)
 {
+    Byte *selection = PTR(gui, GUI_SELECT);
+    gui[0x146f6] = selection && (selection[0xc] & 0xe) &&
+                   (U32(selection, GUI_FLAGS) & 0x80000011u);
     process_filter_frame(filter, popup + 0x28f0);
 }
 
@@ -60,6 +77,17 @@ static void input_frame(uint32_t pad, uint32_t keys)
 static void press_sort(void)
 {
     input_frame(0, 1u << VK_TAB);
+}
+
+static void expect_idle_without_queries(void)
+{
+    memory_queries = 0;
+    for (unsigned frame = 0; frame < 240; ++frame) input_frame(4u, 1u << VK_TAB);
+    if (memory_queries) {
+        fprintf(stderr, "Closed quest selection: %u memory queries in 240 frames\n", memory_queries);
+        exit(1);
+    }
+    assert(!menu.owner && menu.phase == IDLE && !U64(gui, GUI_QUEUE_COUNT));
 }
 
 static bool fake_compare(const SortRow *a, const SortRow *b, int mode, int arg, int extra)
@@ -232,6 +260,13 @@ int main(void)
     popup_callable_vtable[1] = (uintptr_t)clone_callable;
     popup_callable_vtable[2] = (uintptr_t)invoke_popup;
 
+    owner[0xc] = 0;
+    expect_idle_without_queries(); /* The manager retains a reference to the hidden widget. */
+    PTR(gui, GUI_SELECT) = NULL;
+    expect_idle_without_queries();
+    PTR(gui, GUI_SELECT) = owner;
+    owner[0xc] = 2;
+
     I32(owner, 0x2918) = 1;
     press_sort();
     assert(menu.phase == IDLE && U64(gui, GUI_QUEUE_COUNT) == 0);
@@ -254,6 +289,10 @@ int main(void)
     assert(menu.phase == IDLE && !U64(gui, GUI_QUEUE_COUNT));
     U32(keyboard, 0x138) = 0;
 
+    PTR(gui, GUI_SELECT) = NULL;
+    manager_frame();
+    assert(!menu.owner);
+    PTR(gui, GUI_SELECT) = owner;
     press_sort();
     assert(menu.phase == QUEUED && U64(gui, GUI_QUEUE_COUNT) == 1);
     input_frame(4u, 1u << VK_TAB);
@@ -276,6 +315,10 @@ int main(void)
     manager_frame();
     assert(!page_refreshes && I32(filter, FILTER_MODE) == 11 && menu.phase == IDLE);
 
+    PTR(gui, GUI_SELECT) = NULL;
+    manager_frame();
+    assert(!menu.owner);
+    PTR(gui, GUI_SELECT) = owner;
     input_frame(4u, 0); /* Right stick click independently opens the window. */
     consume_queue();
     U32(page, 0x240) = 1;
@@ -287,9 +330,10 @@ int main(void)
     turn_to_page(0);
     assert(I32(owner, SELECT_QUEST_IDS) == 50012 && I32(owner, SELECT_REGISTERED) == 12);
 
-    U32(owner, GUI_FLAGS) |= 0x20;
+    U32(owner, GUI_FLAGS) = 0x20;
     manager_frame();
-    U32(owner, GUI_FLAGS) &= ~0x20u;
+    assert(menu.owner == owner && applied.owner == owner);
+    U32(owner, GUI_FLAGS) = 1;
     manager_frame();
     HANDLE page_worker = CreateThread(NULL, 0, turn_to_second_page, NULL, 0, NULL);
     assert(page_worker && WaitForSingleObject(page_worker, 5000) == WAIT_OBJECT_0);
@@ -325,7 +369,14 @@ int main(void)
     assert(menu.phase == OPEN && open_calls == 5);
     confirm(22);
     assert(I32(owner, SELECT_REGISTERED) == 1);
+    press_sort();
+    consume_queue();
+    assert(menu.phase == OPEN);
     close_detour(owner);
+    PTR(gui, GUI_SELECT) = NULL;
+    manager_frame();
+    assert(!menu.owner && menu.phase == IDLE && I32(filter, FILTER_MODE) == 11);
+    expect_idle_without_queries();
     turn_to_page(1);
     assert(I32(owner, SELECT_REGISTERED) == 11);
     puts("menu transaction fixture passed");

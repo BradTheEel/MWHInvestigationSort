@@ -1,7 +1,27 @@
-Investigation Sort 0.1.3
+Investigation Sort 0.1.4
 Target Steam build 15539686, Windows x64
 Stock executable SHA-256
 C2EBBBD2C49F216D484E31A5219BED419EB1E5E7D206D02CBA040A3AB79D90EA
+
+RED   0.1.3 made 720 VirtualQuery calls in 240 publisher updates with the
+      quest selection widget hidden but still referenced by the manager.
+PASS  0.1.4 made zero calls in each 240-update case (hidden widget, absent
+      widget, and after closing an owned sort popup and cleaning up).
+PASS  Tab and RS each opened the sort popup on the first eligible update.
+      The sort order survived transient inactivity and worker pagination.
+PASS  Zig 0.13.0 Windows x64 build and both shipped fixtures.
+PASS  Zig assembly comparison: the publisher no longer probes the large
+      sorting stack frame. The sort handler runs behind the activity check.
+PASS  Hybrid fixture with the native activity flag writer and verified
+      publisher return address. The original publisher ran on all 240 idle
+      updates. Tab, RS, native worker pagination and result controls passed.
+PASS  Native image preflight with 24 code fingerprints and 4 dispatch slots.
+      A modified activity flag writer was rejected. All five hooks installed
+      and rolled back against the copied stock code.
+
+Gameplay verification and FPS measurements of 0.1.4 are pending.
+
+Historical coverage for 0.1.3
 
 Live baseline, 0.1.2 at the Astera quest board
 - Captured Tab press edges while the list was active, including misses before enqueue.

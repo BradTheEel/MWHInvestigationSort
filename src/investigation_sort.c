@@ -25,6 +25,7 @@ enum {
     GUI_SELECT = 0x14408,
     GUI_POPUP = 0x141b0,
     GUI_POPUP_FOCUS = 0x146f2,
+    GUI_SELECT_ACTIVE = 0x146f6,
     GUI_SEARCH_FILTER = 0x15540,
     GUI_QUEUE = 0x4f60,
     GUI_QUEUE_COUNT = 0x8f60,
@@ -510,9 +511,9 @@ static bool sort_pressed(Byte *owner)
            (U32(keyboard, KEYBOARD_TRIGGER) & (1u << VK_TAB));
 }
 
-static void process_filter_frame(Byte *filter, const Byte *payload)
+/* Keep the snapshot buffers off the idle publisher's stack. */
+static __declspec(noinline) void process_active_filter_frame(Byte *gui, Byte *filter, const Byte *payload)
 {
-    Byte *gui = manager();
     if (!readable(gui, GUI_SEARCH_FILTER + 8) || PTR(gui, GUI_SEARCH_FILTER) != filter)
         return;
     Byte *owner = PTR(gui, GUI_SELECT);
@@ -533,6 +534,14 @@ static void process_filter_frame(Byte *filter, const Byte *payload)
     Byte *button = PTR(owner, SELECT_RESEARCH_LIST);
     if (!readable(button, 0x174) || button[0x173]) return;
     if (sort_pressed(owner)) queue_popup(owner, gui);
+}
+
+static void process_filter_frame(Byte *filter, const Byte *payload)
+{
+    Byte *gui = manager();
+    /* The stock manager sets the flag before publishing. An owned session still needs cleanup. */
+    if (gui && (menu.owner || gui[GUI_SELECT_ACTIVE]))
+        process_active_filter_frame(gui, filter, payload);
 }
 
 static void publish_detour(Byte *filter, const Byte *payload, unsigned target, uint8_t mode)
@@ -575,6 +584,7 @@ static bool stock_image(void)
         {PUBLISH_FILTER, 0x250, UINT64_C(0x07519c85a0e6943c)},
         {0x1aeaf30, 0x2b, UINT64_C(0x5eaa6d6a9519a167)},
         {0x1aeb130, 0x43, UINT64_C(0x1f9890a7279694d5)},
+        {0x1ada971, 0x29, UINT64_C(0xdfbcaf6737c4f236)}, /* Quest selection activity flag. */
         {RESULT_SINGLE, 0xa1, UINT64_C(0x317c05b217c22f92)},
         {RESULT_MULTIPLE, 0x110, UINT64_C(0x0251b3a874271e3e)},
         {0x1077360, 0xb0, UINT64_C(0x481f93872ade56b2)}
